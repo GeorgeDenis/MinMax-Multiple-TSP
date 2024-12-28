@@ -44,6 +44,61 @@ public class Chromosome {
         this.random = new Random();
     }
 
+    public void balanceRoutes() {
+        boolean improved = true;
+        int maxIterations = 5;
+        int iteration = 0;
+
+        while (improved && iteration < maxIterations) {
+            improved = false;
+            double avgTourCost = cost / numberOfSalesmen;
+
+            List<Integer> heaviestTour = null;
+            List<Integer> lightestTour = null;
+            double maxCost = 0;
+            double minCost = Double.MAX_VALUE;
+
+            for (List<Integer> route : solution) {
+                double routeCost = calculateRouteCost(route);
+                if (routeCost > maxCost) {
+                    maxCost = routeCost;
+                    heaviestTour = route;
+                }
+                if (routeCost < minCost) {
+                    minCost = routeCost;
+                    lightestTour = route;
+                }
+            }
+
+            // Mută doar dacă dezechilibrul este semnificativ (>20% față de medie)
+            if (heaviestTour != null && lightestTour != null && (maxCost - minCost) > 0.2 * avgTourCost) {
+                int bestCityIndex = -1;
+                double bestSavings = 0;
+
+                for (int i = 1; i < heaviestTour.size() - 1; i++) {
+                    int city = heaviestTour.get(i);
+                    heaviestTour.remove(i);
+                    double newCost = calculateRouteCost(heaviestTour);
+                    double savings = maxCost - newCost;
+
+                    if (savings > bestSavings) {
+                        bestSavings = savings;
+                        bestCityIndex = i;
+                    }
+                    heaviestTour.add(i, city);
+                }
+
+                if (bestCityIndex != -1) {
+                    int city = heaviestTour.remove(bestCityIndex);
+                    lightestTour.add(random.nextInt(lightestTour.size() - 1) + 1, city);
+                    improved = true;
+                    evaluateFitness();
+                }
+            }
+            iteration++;
+        }
+    }
+
     private void generateRandomSolution() {
         List<Integer> cities = new ArrayList<>();
         for (int i = 1; i < numberOfCities; i++) {
@@ -54,15 +109,12 @@ public class Chromosome {
         int baseSize = cities.size() / numberOfSalesmen;
         int extra = cities.size() % numberOfSalesmen;
 
-
         int start = 0;
         for (int i = 0; i < numberOfSalesmen; i++) {
             List<Integer> salesmanRoute = new ArrayList<>();
-            salesmanRoute.add(0);  // Start la depozit
+            salesmanRoute.add(0);  // Start de la depozit
 
             int end = start + baseSize + (i < extra ? 1 : 0);
-
-
             salesmanRoute.addAll(cities.subList(start, end));
             salesmanRoute.add(0);
             solution.add(salesmanRoute);
@@ -70,30 +122,45 @@ public class Chromosome {
             start = end;
         }
 
-        // Dacă există orașe rămase (deseori când `numberOfCities % numberOfSalesmen != 0`)
-        while (start < cities.size()) {
-            solution.get(random.nextInt(numberOfSalesmen)).add(1, cities.get(start++));
-        }
+        // Reechilibrare după generarea inițială
+        balanceRoutes();
     }
 
-
-    // Funcția de fitness
     private void evaluateFitness() {
         cost = 0;
         minmax = 0;
+        double totalTourCost = 0;
+        int nonEmptyTours = 0;
+
         for (List<Integer> salesmanRoute : solution) {
-            double salesmanCost = 0;
-            for (int i = 0; i < salesmanRoute.size() - 1; i++) {
-                int city1 = salesmanRoute.get(i);
-                int city2 = salesmanRoute.get(i + 1);
-                salesmanCost += adjacencyMatrix[city1][city2];
+            double salesmanCost = calculateRouteCost(salesmanRoute);
+            totalTourCost += salesmanCost;
+            if (salesmanCost > 0) {
+                nonEmptyTours++;
             }
             cost += salesmanCost;
             if (salesmanCost > minmax) {
                 minmax = salesmanCost;
             }
         }
-        score = cost + minmax;
+
+        double avgTourCost = nonEmptyTours > 0 ? totalTourCost / nonEmptyTours : 0;
+        double imbalance = minmax - avgTourCost;
+
+        // Penalizare progresivă - mai blândă pentru dezechilibre mici
+        double penaltyFactor = imbalance > 15 ? 8 : 3.5;
+        score = cost + imbalance * penaltyFactor;
+    }
+
+
+    private double calculateRouteCost(List<Integer> route) {
+        double cost = 0;
+        for (int i = 0; i < route.size() - 1; i++) {
+            int city1 = route.get(i);
+            int city2 = route.get(i + 1);
+            cost += adjacencyMatrix[city1][city2];
+        }
+        return cost;
     }
 
 
@@ -101,7 +168,7 @@ public class Chromosome {
         int salesmanIndex = random.nextInt(numberOfSalesmen);
         List<Integer> salesmanRoute = solution.get(salesmanIndex);
 
-        if (salesmanRoute.size() > 3) {
+        if (salesmanRoute.size() > numberOfSalesmen + 1) {
             int i = random.nextInt(salesmanRoute.size() - 2) + 1;
             int j = random.nextInt(salesmanRoute.size() - 2) + 1;
             Collections.swap(salesmanRoute, i, j);
@@ -119,7 +186,7 @@ public class Chromosome {
 
         List<Integer> salesman1 = solution.get(index1);
         List<Integer> salesman2 = solution.get(index2);
-        while (salesman1.size() < 4) {
+        while (salesman1.size() < numberOfSalesmen + 1) {
             index1 = random.nextInt(numberOfSalesmen);
             index2 = random.nextInt(numberOfSalesmen);
             salesman1 = solution.get(index1);
@@ -149,8 +216,13 @@ public class Chromosome {
                 }
             }
         }
+        // Aplică reechilibrare doar dacă diferențele sunt mari
+        if (minmax > 1.2 * (cost / numberOfSalesmen)) {
+            balanceRoutes();
+        }
         evaluateFitness();
     }
+
 
     public void printBestSolution() {
         for (int i = 0; i < solution.size(); i++) {
@@ -168,6 +240,27 @@ public class Chromosome {
                 System.out.print((city + 1) + "-");
             }
             System.out.printf("   (# %d)   Cost: %.2f%n", route.size(), routeCost);
+        }
+    }
+
+    public void hillClimbing(List<Integer> route) {
+        boolean improved = true;
+        while (improved) {
+            improved = false;
+            double currentCost = calculateRouteCost(route);
+            for (int i = 1; i < route.size() - 2; i++) {
+                for (int j = i + 1; j < route.size() - 1; j++) {
+                    Collections.swap(route, i, j);
+                    double newCost = calculateRouteCost(route);
+
+                    if (newCost < currentCost) {
+                        currentCost = newCost;
+                        improved = true;
+                    } else {
+                        Collections.swap(route, i, j);
+                    }
+                }
+            }
         }
     }
 

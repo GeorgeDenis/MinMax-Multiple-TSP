@@ -12,7 +12,7 @@ public class Population {
     private Random random;
 
     // Constructor
-    public Population(int populationSize,int numberOfCities, int numberOfSalesman, double[][] adjacencyMatrix) {
+    public Population(int populationSize, int numberOfCities, int numberOfSalesman, double[][] adjacencyMatrix) {
         this.populationSize = populationSize;
         this.numberOfCities = numberOfCities;
         this.adjacencyMatrix = adjacencyMatrix;
@@ -27,7 +27,6 @@ public class Population {
 
     public void runGeneticAlgorithm(int numberOfIterations, double mutationProbability, double crossoverProbability) {
         for (int iteration = 0; iteration < numberOfIterations; iteration++) {
-
             performTournamentSelection();
 
             for (Chromosome chromosome : population) {
@@ -40,7 +39,6 @@ public class Population {
                 }
             }
 
-            // Mutare locală
             for (Chromosome chromosome : population) {
                 if (random.nextDouble() < mutationProbability) {
                     Chromosome mutant = new Chromosome(chromosome);
@@ -51,7 +49,6 @@ public class Population {
                 }
             }
 
-            // Crossover
             for (int i = 0; i < population.size(); i++) {
                 if (random.nextDouble() < crossoverProbability) {
                     int partnerIndex = random.nextInt(population.size());
@@ -69,11 +66,68 @@ public class Population {
                     }
                 }
             }
-            Chromosome bestChromosome = getBestResult();
-//            System.out.println("Iteration: " + iteration + ", Best Score: " + bestChromosome.getScore());
 
+            List<Chromosome> top10Percent = population.stream()
+                    .sorted(Comparator.comparingDouble(Chromosome::getScore))
+                    .limit((int) (populationSize * 0.65))
+                    .toList();
+
+            for (Chromosome chromosome : top10Percent) {
+                for (List<Integer> route : chromosome.getSolution()) {
+                    chromosome.hillClimbing(route);
+                }
+            }
+//            for (List<Integer> route : bestChromosome.getSolution()) {
+//                bestChromosome.hillClimbing(route);
+//            }
+//            System.out.println("Iteration: " + iteration + ", Best Score: " + bestChromosome.getScore());
         }
     }
+
+
+    private void performElitismSelection() {
+        population.sort(Comparator.comparingDouble(Chromosome::getScore));
+        List<Chromosome> nextGeneration = new ArrayList<>(population.subList(0, (int) (populationSize * 0.3)));
+
+        while (nextGeneration.size() < populationSize) {
+            nextGeneration.add(new Chromosome(population.get(random.nextInt((int) (populationSize * 0.3)))));
+        }
+        population = nextGeneration;
+    }
+
+
+    private void performRouletteSelection() {
+        double totalFitness = 0;
+        List<Double> invertedFitness = new ArrayList<>();
+
+        for (Chromosome chromosome : population) {
+            double fitness = 1.0 / (chromosome.getScore() + 1e-6);
+            invertedFitness.add(fitness);
+            totalFitness += fitness;
+        }
+
+        List<Chromosome> selected = new ArrayList<>();
+
+        while (selected.size() < (int) (populationSize * 0.6)) {
+            double spin = random.nextDouble() * totalFitness;
+            double partialSum = 0;
+
+            for (int i = 0; i < population.size(); i++) {
+                partialSum += invertedFitness.get(i);
+                if (partialSum >= spin) {
+                    selected.add(population.get(i));
+                    break;
+                }
+            }
+        }
+
+        population = selected;
+
+        while (population.size() < populationSize) {
+            population.add(new Chromosome(numberOfCities, numberOfSalesman, adjacencyMatrix));
+        }
+    }
+
 
     private void performTournamentSelection() {
         int k = populationSize;
