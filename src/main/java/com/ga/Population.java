@@ -33,24 +33,36 @@ public class Population {
                 if (random.nextDouble() < mutationProbability) {
                     Chromosome mutant = new Chromosome(chromosome);
                     mutant.mutateGlobal();
+                    mutant.balanceRoutes();
                     if (mutant.getScore() < chromosome.getScore()) {
                         population.set(population.indexOf(chromosome), mutant);
                     }
                 }
             }
-
             for (Chromosome chromosome : population) {
                 if (random.nextDouble() < mutationProbability) {
                     Chromosome mutant = new Chromosome(chromosome);
-                    mutant.mutateLocal();
+                    int salesmanIndex = random.nextInt(mutant.getSolution().size());
+                    mutant.mutateLocal3Opt(salesmanIndex);
+                    mutant.balanceRoutes();
                     if (mutant.getScore() < chromosome.getScore()) {
                         population.set(population.indexOf(chromosome), mutant);
                     }
                 }
             }
 
+//            for (Chromosome chromosome : population) {
+//                if (random.nextDouble() < mutationProbability) {
+//                    Chromosome mutant = new Chromosome(chromosome);
+//                    mutant.mutateLocal();
+//                    mutant.balanceRoutes();
+//                    if (mutant.getScore() < chromosome.getScore()) {
+//                        population.set(population.indexOf(chromosome), mutant);
+//                    }
+//                }
+//            }
+
             for (int i = 0; i < population.size(); i++) {
-                if (random.nextDouble() < crossoverProbability) {
                     int partnerIndex = random.nextInt(population.size());
                     if (i != partnerIndex) {
                         Chromosome child1 = new Chromosome(population.get(i));
@@ -65,11 +77,17 @@ public class Population {
                         }
                     }
                 }
-            }
+//            for (Chromosome chromosome : population) {
+//                if (random.nextDouble() < 0.3) {
+//                    for (List<Integer> route : chromosome.getSolution()) {
+//                        chromosome.hillClimbing(route);
+//                    }
+//                }
+//            }
 
             List<Chromosome> top10Percent = population.stream()
                     .sorted(Comparator.comparingDouble(Chromosome::getScore))
-                    .limit((int) (populationSize * 0.65))
+                    .limit((int) (populationSize * 0.5))
                     .toList();
 
             for (Chromosome chromosome : top10Percent) {

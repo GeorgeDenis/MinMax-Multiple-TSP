@@ -1,5 +1,6 @@
 package com.ga;
 
+import javax.xml.crypto.Data;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,16 +8,15 @@ import java.util.Random;
 
 public class Chromosome {
 
-    private int numberOfCities; // Numărul de orașe
-    private int numberOfSalesmen; // Numărul de salesmen
-    private double[][] adjacencyMatrix; // Matricea de adiacență
-    private List<List<Integer>> solution; // Soluția (rutele fiecărui salesman)
-    private double cost; // Costul total al soluției
-    private double minmax; // Cel mai lung cost al unui salesman
-    private double score; // Fitness-ul total
+    private int numberOfCities;
+    private int numberOfSalesmen;
+    private double[][] adjacencyMatrix;
+    private List<List<Integer>> solution;
+    private double cost;
+    private double minmax;
+    private double score;
     private Random random;
 
-    // Constructor
     public Chromosome(int numberOfCities, int numberOfSalesmen, double[][] adjacencyMatrix) {
         this.numberOfCities = numberOfCities;
         this.numberOfSalesmen = numberOfSalesmen;
@@ -46,10 +46,9 @@ public class Chromosome {
 
     public void balanceRoutes() {
         boolean improved = true;
-        int maxIterations = 5;
         int iteration = 0;
 
-        while (improved && iteration < maxIterations) {
+        while (improved && iteration < 15) {
             improved = false;
             double avgTourCost = cost / numberOfSalesmen;
 
@@ -70,8 +69,7 @@ public class Chromosome {
                 }
             }
 
-            // Mută doar dacă dezechilibrul este semnificativ (>20% față de medie)
-            if (heaviestTour != null && lightestTour != null && (maxCost - minCost) > 0.2 * avgTourCost) {
+            if (heaviestTour != null && lightestTour != null && (maxCost - minCost) > 0.15 * avgTourCost) {
                 int bestCityIndex = -1;
                 double bestSavings = 0;
 
@@ -99,6 +97,7 @@ public class Chromosome {
         }
     }
 
+
     private void generateRandomSolution() {
         List<Integer> cities = new ArrayList<>();
         for (int i = 1; i < numberOfCities; i++) {
@@ -112,7 +111,7 @@ public class Chromosome {
         int start = 0;
         for (int i = 0; i < numberOfSalesmen; i++) {
             List<Integer> salesmanRoute = new ArrayList<>();
-            salesmanRoute.add(0);  // Start de la depozit
+            salesmanRoute.add(0);
 
             int end = start + baseSize + (i < extra ? 1 : 0);
             salesmanRoute.addAll(cities.subList(start, end));
@@ -122,7 +121,6 @@ public class Chromosome {
             start = end;
         }
 
-        // Reechilibrare după generarea inițială
         balanceRoutes();
     }
 
@@ -135,21 +133,16 @@ public class Chromosome {
         for (List<Integer> salesmanRoute : solution) {
             double salesmanCost = calculateRouteCost(salesmanRoute);
             totalTourCost += salesmanCost;
-            if (salesmanCost > 0) {
-                nonEmptyTours++;
-            }
             cost += salesmanCost;
             if (salesmanCost > minmax) {
                 minmax = salesmanCost;
             }
         }
 
-        double avgTourCost = nonEmptyTours > 0 ? totalTourCost / nonEmptyTours : 0;
+        double avgTourCost = totalTourCost / numberOfSalesmen;
         double imbalance = minmax - avgTourCost;
 
-        // Penalizare progresivă - mai blândă pentru dezechilibre mici
-        double penaltyFactor = imbalance > 15 ? 8 : 3.5;
-        score = cost + imbalance * penaltyFactor;
+        score = cost + Math.pow(imbalance, 0.6);
     }
 
 
@@ -161,6 +154,46 @@ public class Chromosome {
             cost += adjacencyMatrix[city1][city2];
         }
         return cost;
+    }
+
+    public void mutateLocal2Opt(int salesmanIndex) {
+        List<Integer> route = solution.get(salesmanIndex);
+        if (route.size() > salesmanIndex + 1) {
+            int i = random.nextInt(route.size() - 3) + 1;
+            int j = i + 1 + random.nextInt(route.size() - i - 2);
+
+            while (i < j) {
+                Collections.swap(route, i, j);
+                i++;
+                j--;
+            }
+            evaluateFitness();
+        }
+    }
+
+    public void mutateLocal3Opt(int salesmanIndex) {
+        List<Integer> route = solution.get(salesmanIndex);
+        int size = route.size();
+        if (size > 5) {
+            int i = random.nextInt(size - 4) + 1;
+            int j = i + 1 + random.nextInt(size - i - 3);
+            int k = j + 1 + random.nextInt(size - j - 2);
+
+            List<Integer> segment1 = new ArrayList<>(route.subList(0, i));
+            List<Integer> segment2 = new ArrayList<>(route.subList(i, j));
+            List<Integer> segment3 = new ArrayList<>(route.subList(j, k));
+            List<Integer> segment4 = new ArrayList<>(route.subList(k, size));
+
+            Collections.reverse(segment2);
+            Collections.reverse(segment3);
+
+            route.clear();
+            route.addAll(segment1);
+            route.addAll(segment3);
+            route.addAll(segment2);
+            route.addAll(segment4);
+        }
+        evaluateFitness();
     }
 
 
@@ -216,7 +249,6 @@ public class Chromosome {
                 }
             }
         }
-        // Aplică reechilibrare doar dacă diferențele sunt mari
         if (minmax > 1.2 * (cost / numberOfSalesmen)) {
             balanceRoutes();
         }
@@ -240,6 +272,24 @@ public class Chromosome {
                 System.out.print((city + 1) + "-");
             }
             System.out.printf("   (# %d)   Cost: %.2f%n", route.size(), routeCost);
+        }
+    }
+
+    public void writeBestSolution(String dataPath) {
+        for (int i = 0; i < solution.size(); i++) {
+            List<Integer> route = solution.get(i);
+            double routeCost = 0;
+            for (int j = 0; j < route.size() - 1; j++) {
+                int city1 = route.get(j);
+                int city2 = route.get(j + 1);
+                routeCost += adjacencyMatrix[city1][city2];
+            }
+            DataWriter.writeData(dataPath, (i + 1) + ": ");
+            for (int city : route) {
+                DataWriter.writeData(dataPath, (city + 1) + "-");
+            }
+
+            DataWriter.writeData(dataPath, String.format("   (# %d)   Cost: %.2f%n", route.size(), routeCost));
         }
     }
 
