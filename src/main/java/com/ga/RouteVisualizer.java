@@ -61,11 +61,9 @@ public class RouteVisualizer extends JPanel {
         g2d.setStroke(new BasicStroke(3));
         Color[] colors = {Color.RED, Color.BLUE, Color.GREEN, Color.MAGENTA, Color.ORANGE, Color.CYAN, Color.PINK};
         List<List<Integer>> solution = bestChromosome.getSolution();
-
         for (int i = 0; i < solution.size(); i++) {
             g2d.setColor(colors[i % colors.length]);
             List<Integer> route = solution.get(i);
-
             for (int j = 0; j < route.size() - 1; j++) {
                 int city1 = route.get(j);
                 int city2 = route.get(j + 1);

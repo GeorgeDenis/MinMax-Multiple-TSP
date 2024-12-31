@@ -1,6 +1,5 @@
 package com.ga;
 
-import javax.xml.crypto.Data;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -142,7 +141,7 @@ public class Chromosome {
         double avgTourCost = totalTourCost / numberOfSalesmen;
         double imbalance = minmax - avgTourCost;
 
-        score = cost + Math.pow(imbalance, 0.6);
+        score = cost + Math.pow(imbalance, 1.05);
     }
 
 
@@ -329,5 +328,21 @@ public class Chromosome {
 
     public List<List<Integer>> getSolution() {
         return solution;
+    }
+
+    public void setNumberOfCities(int numberOfCities) {
+        this.numberOfCities = numberOfCities;
+    }
+
+    public void setNumberOfSalesmen(int numberOfSalesmen) {
+        this.numberOfSalesmen = numberOfSalesmen;
+    }
+
+    public void setAdjacencyMatrix(double[][] adjacencyMatrix) {
+        this.adjacencyMatrix = adjacencyMatrix;
+    }
+
+    public void setSolution(List<List<Integer>> solution) {
+        this.solution = solution;
     }
 }
