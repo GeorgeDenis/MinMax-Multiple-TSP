@@ -141,7 +141,7 @@ public class Chromosome {
         double avgTourCost = totalTourCost / numberOfSalesmen;
         double imbalance = minmax - avgTourCost;
 
-        score = cost + Math.pow(imbalance, 1.05);
+        score = cost + Math.pow(imbalance, 1.3);
     }
 
 
