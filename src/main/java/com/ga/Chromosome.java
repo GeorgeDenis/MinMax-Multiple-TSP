@@ -127,7 +127,6 @@ public class Chromosome {
         cost = 0;
         minmax = 0;
         double totalTourCost = 0;
-        int nonEmptyTours = 0;
 
         for (List<Integer> salesmanRoute : solution) {
             double salesmanCost = calculateRouteCost(salesmanRoute);
@@ -153,21 +152,6 @@ public class Chromosome {
             cost += adjacencyMatrix[city1][city2];
         }
         return cost;
-    }
-
-    public void mutateLocal2Opt(int salesmanIndex) {
-        List<Integer> route = solution.get(salesmanIndex);
-        if (route.size() > salesmanIndex + 1) {
-            int i = random.nextInt(route.size() - 3) + 1;
-            int j = i + 1 + random.nextInt(route.size() - i - 2);
-
-            while (i < j) {
-                Collections.swap(route, i, j);
-                i++;
-                j--;
-            }
-            evaluateFitness();
-        }
     }
 
     public void mutateLocal3Opt(int salesmanIndex) {

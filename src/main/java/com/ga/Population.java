@@ -11,7 +11,6 @@ public class Population {
     private double[][] adjacencyMatrix;
     private Random random;
 
-    // Constructor
     public Population(int populationSize, int numberOfCities, int numberOfSalesman, double[][] adjacencyMatrix) {
         this.populationSize = populationSize;
         this.numberOfCities = numberOfCities;
@@ -25,7 +24,7 @@ public class Population {
         }
     }
 
-    public void runGeneticAlgorithm(int numberOfIterations, double mutationProbability, double crossoverProbability) {
+    public void runGeneticAlgorithm(int numberOfIterations, double mutationProbability) {
         for (int iteration = 0; iteration < numberOfIterations; iteration++) {
             performTournamentSelection();
 
@@ -85,12 +84,12 @@ public class Population {
 //                }
 //            }
 
-            List<Chromosome> top10Percent = population.stream()
+            List<Chromosome> top50Percent = population.stream()
                     .sorted(Comparator.comparingDouble(Chromosome::getScore))
                     .limit((int) (populationSize * 0.5))
                     .toList();
 
-            for (Chromosome chromosome : top10Percent) {
+            for (Chromosome chromosome : top50Percent) {
                 for (List<Integer> route : chromosome.getSolution()) {
                     chromosome.hillClimbing(route);
                 }

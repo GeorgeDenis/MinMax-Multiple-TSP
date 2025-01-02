@@ -10,7 +10,7 @@ public class Main {
 
 
 //        Population population = new Population(100, 76, 2, adjacencyMatrix);
-//        population.runGeneticAlgorithm(40000, 0.25, 0.2);
+//        population.runGeneticAlgorithm(40000, 0.25);
 
 //        double totalCost = 0;
 //        double totalMinmax = 0;
@@ -21,7 +21,7 @@ public class Main {
 //
 //        for (int i = 0; i < 15; i++) {
 //            Population population = new Population(100, 76, 5, adjacencyMatrix);
-//            population.runGeneticAlgorithm(40000, 0.4, 0.2);
+//            population.runGeneticAlgorithm(40000, 0.4);
 //            System.out.println("Iteration: " + (i + 1) + "\n");
 //            DataWriter.writeData("K:\\Projects\\MIN\\MTSP\\Github-MTSP\\MinMax-Multiple-TSP\\src\\main\\java\\com\\ga\\output\\eil76-5.txt", "Iteration: " + (i + 1) + "\n");
 //            Chromosome bestChromosome = population.getBestResult();
@@ -72,7 +72,7 @@ public class Main {
 
             for (int i = 0; i < 15; i++) {
                 Population population = new Population(100, 99, s, adjacencyMatrix);
-                population.runGeneticAlgorithm(40000, 0.4, 0.2);
+                population.runGeneticAlgorithm(40000, 0.4);
                 System.out.println("Iteration: " + (i + 1) + "\n");
                 DataWriter.writeData("K:\\Projects\\MIN\\MTSP\\Github-MTSP\\MinMax-Multiple-TSP\\src\\main\\java\\com\\ga\\output\\rat99-" + s + ".txt", "Iteration: " + (i + 1) + "\n");
                 Chromosome bestChromosome = population.getBestResult();
