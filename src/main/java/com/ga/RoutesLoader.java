@@ -39,11 +39,12 @@ public class RoutesLoader {
         for (String[] input : inputs) {
             double[][] coordinates = DataReader.readCoordinates(basePath + input[0] + ".tsp.txt");
             double[][] adjacencyMatrix = DataReader.coordinatesToAdjacencyMatrix(basePath + input[0] + ".tsp.txt");
-            for (int i = 0; i < salesmen.length; i++) {
-                List<List<Integer>> routes = showRoutes(basePath + "visualizer\\" + input[0] + "-" + salesmen[i] + ".txt");
-                Chromosome chromosome = new Chromosome(Integer.parseInt(input[1]), salesmen[i], adjacencyMatrix);
+            for (int salesman : salesmen) {
+                String fileName = basePath + "graphics\\" + input[0] + "-" + salesman;
+                List<List<Integer>> routes = showRoutes(basePath + "visualizer\\" + input[0] + "-" + salesman + ".txt");
+                Chromosome chromosome = new Chromosome(Integer.parseInt(input[1]), salesman, adjacencyMatrix);
                 chromosome.setSolution(routes);
-                RouteVisualizer.visualize(chromosome, coordinates);
+                RouteVisualizer.visualize(chromosome, coordinates, fileName);
             }
 
         }

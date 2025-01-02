@@ -1,7 +1,11 @@
 package com.ga;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 public class RouteVisualizer extends JPanel {
@@ -107,13 +111,28 @@ public class RouteVisualizer extends JPanel {
         return normalized;
     }
 
+    private void saveAsImage(String fileName) {
+        BufferedImage image = new BufferedImage(this.getWidth(), this.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+        this.paint(g2d);
+        g2d.dispose();
+        try {
+            File file = new File(fileName + ".png");
+            file.getParentFile().mkdirs();
+            ImageIO.write(image, "png", file);
+            System.out.println("Saved: " + fileName + ".png");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-    public static void visualize(Chromosome bestChromosome, double[][] coordinates) {
+    public static void visualize(Chromosome bestChromosome, double[][] coordinates, String fileName) {
         JFrame frame = new JFrame("Salesman Route Visualization");
         RouteVisualizer visualizer = new RouteVisualizer(bestChromosome, coordinates);
         frame.add(visualizer);
         frame.setSize(1000, 1000);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
+        SwingUtilities.invokeLater(() -> visualizer.saveAsImage(fileName));
     }
 }
